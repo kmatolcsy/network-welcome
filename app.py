@@ -9,46 +9,53 @@ def open_config(path='./config.json'):
     return config
 
 
-def list_ip_addresses(broadcast, interval):
+def list_ip_addresses(broadcast, packets):
     addresses = list()
-    proc = Popen(['ping', '-i', interval, '-b', broadcast], stdout=PIPE)
+    proc = Popen(['ping', '-c', str(packets), '-b', broadcast], stdout=PIPE)
 
-    while True:
-        line = proc.stdout.readline()
+    while line := proc.stdout.readline():
+        line = line.decode('utf-8').split()
 
         if not line:
             proc.terminate()
             return addresses
-        
-        line = line.decode('utf-8').split()
-        addresses.append(line[3])
+
+        addresses.append(line[3].strip(':'))
+
+    return addresses
 
 
 def main():
     conf = open_config()
-    
-    # bedroom = GoogleAssistant(conf.get('bedroom'))
+
+    bedroom = GoogleAssistant(conf.get('bedroom'))
     kitchen = GoogleAssistant(conf.get('kitchen'))
-    
+
     connected = False
     lag = False
 
     while True:
-        addresses = list_ip_addresses(conf.get('broadcast'), 30)
+        addresses = list_ip_addresses(conf.get('broadcast'), 2)
+        print(addresses)
 
         lag = connected
         connected = True if conf.get('irene') in addresses else False
+        print(f'{lag=}\t{connected=}')
 
-        if connected and not lag:
+        message = None
+
+        if coming := connected and not lag:
             message = 'Irene is coming home!'
 
-        if lag and not connected:
+        if leaving := lag and not connected:
             message = 'Irene is leaving!'
 
-        kitchen.say(message)
+        if coming or leaving:
+             bedroom.say(message)
+
         sleep(40)
-            
+
 
 if __name__ == '__main__':
     main()
-    
+
