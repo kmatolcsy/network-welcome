@@ -2,6 +2,7 @@ import json
 from time import sleep, gmtime
 from subprocess import Popen, PIPE
 from googlecontroller import GoogleAssistant
+from telegram import Bot
 
 
 def open_config(path='./config.json'):
@@ -26,6 +27,7 @@ def main(e):
 
     # bedroom = GoogleAssistant(ip.get('bedroom'))
     kitchen = GoogleAssistant(ip.get('kitchen'))
+    telebot = Bot(ip.get('bot'))
 
     is_connected = False
     was_connected = False
@@ -48,6 +50,7 @@ def main(e):
 
         if (coming or leaving) and (8 <= time.tm_hour <= 21):
              kitchen.say(message)
+             telebot.send_message(chat_id=ip.get('chat'), text=message)
 
         sleep(9)
         e.wait()
