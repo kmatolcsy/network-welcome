@@ -1,5 +1,5 @@
 import json
-from time import sleep
+from time import sleep, gmtime
 from subprocess import Popen, PIPE
 from googlecontroller import GoogleAssistant
 
@@ -9,53 +9,52 @@ def open_config(path='./config.json'):
     return config
 
 
-def list_ip_addresses(broadcast, packets):
+def list_ip_addresses(broadcast, packets=2):
     addresses = list()
     proc = Popen(['ping', '-c', str(packets), '-b', broadcast], stdout=PIPE)
 
     while line := proc.stdout.readline().decode('utf-8').split():
-
-        if not line:
-            proc.terminate()
-            return addresses
-
+        if not line: break
         addresses.append(line[3].strip(':'))
 
     proc.terminate()
     return addresses
 
 
-def main():
-    conf = open_config()
+def main(e):
+    ip = open_config()
 
-    bedroom = GoogleAssistant(conf.get('bedroom'))
-    kitchen = GoogleAssistant(conf.get('kitchen'))
+    # bedroom = GoogleAssistant(ip.get('bedroom'))
+    kitchen = GoogleAssistant(ip.get('kitchen'))
 
-    connected = False
-    lag = False
+    is_connected = False
+    was_connected = False
 
     while True:
-        addresses = list_ip_addresses(conf.get('broadcast'), 2)
+        time = gmtime()
+        addresses = list_ip_addresses(ip.get('broadcast'))
         print(addresses)
 
-        lag = connected
-        connected = True if conf.get('irene') in addresses else False
-        print(f'{lag=}\t{connected=}')
+        was_connected = is_connected
+        is_connected = True if ip.get('irene') in addresses else False
 
         message = None
 
-        if coming := connected and not lag:
+        if coming := (is_connected and not was_connected):
             message = 'Irene is coming home!'
 
-        if leaving := lag and not connected:
+        if leaving := (was_connected and not is_connected):
             message = 'Irene is leaving!'
 
-        if coming or leaving:
-             bedroom.say(message)
+        if (coming or leaving) and (8 <= time.tm_hour <= 21):
+             kitchen.say(message)
 
-        sleep(40)
+        sleep(10)
+        e.wait()
 
 
-def test():
-    sleep(5)
-    print('Done')
+def test(e):
+    while True:
+        e.wait()
+        print('working hard...')
+        sleep(20)
