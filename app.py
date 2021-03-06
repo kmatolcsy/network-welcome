@@ -1,5 +1,5 @@
 import threading
-from flask import Flask, url_for, redirect
+from flask import Flask, render_template, redirect, url_for
 from waitress import serve
 
 from scanner import test
@@ -12,7 +12,7 @@ scanner = threading.Thread(target=test, args=(event, ))
 
 @app.route('/')
 def index():
-    return f'Job alive: {scanner.is_alive()} Event set: {event.is_set()}'
+    return render_template('index.html', job=scanner.is_alive(), event=event.is_set())
 
 
 @app.route('/toogle')

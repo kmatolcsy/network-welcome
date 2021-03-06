@@ -49,7 +49,7 @@ def main(e):
         if (coming or leaving) and (8 <= time.tm_hour <= 21):
              kitchen.say(message)
 
-        sleep(10)
+        sleep(9)
         e.wait()
 
 
